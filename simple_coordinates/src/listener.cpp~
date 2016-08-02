@@ -1,11 +1,20 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Twist.h> 
 #include <visualization_msgs/Marker.h>
-
+#include <vector>
+#include <string>
+#include <sstream>
 
 ros::Publisher marker_pub;
 visualization_msgs::Marker line_strip;
+
+//quaternion values
+float q_x;
+float q_y;
+float q_z;
+float q_w;
 
 void chatterCallback(const geometry_msgs::Vector3& msg) {
 	ROS_INFO_STREAM("I Heard: " <<msg.x << ", " << msg.y << ", "
@@ -21,10 +30,10 @@ void chatterCallback(const geometry_msgs::Vector3& msg) {
 	marker.pose.position.x = msg.x;
     	marker.pose.position.y = msg.z;
     	marker.pose.position.z = msg.y;
-    	marker.pose.orientation.x = 0.0;
-   	marker.pose.orientation.y = 0.0;
-    	marker.pose.orientation.z = 0.0;
-    	marker.pose.orientation.w = 1.0;
+    	marker.pose.orientation.x = q_x;
+   	marker.pose.orientation.y = q_y;
+    	marker.pose.orientation.z = q_z;
+    	marker.pose.orientation.w = q_w;
  	marker.scale.x = 1.0;
    	marker.scale.y = 1.0;
    	marker.scale.z = 1.0;
@@ -39,7 +48,7 @@ void chatterCallback(const geometry_msgs::Vector3& msg) {
         line_strip.pose.orientation.w = 1.0;
     	line_strip.id = 1;
     	line_strip.type = visualization_msgs::Marker::LINE_STRIP;
-	line_strip.scale.x = 0.08;
+	line_strip.scale.x = 0.01;
 	line_strip.color.r = 1.0;
         line_strip.color.a = 1.0;
 
@@ -53,6 +62,17 @@ void chatterCallback(const geometry_msgs::Vector3& msg) {
 
 }
 
+void quaternionCallback(const geometry_msgs::Twist& msg)
+{
+	q_y = msg.linear.x;
+	q_w = -msg.linear.y; 
+	q_x = msg.linear.z; 
+	q_z = msg.angular.x; 
+	ROS_INFO_STREAM("I Heard Quaternion: " << q_x << ", " << q_y << ", " << q_z << ", " << q_w); 
+
+}
+
+
 int main(int argc, char **argv)
 {
 	
@@ -62,6 +82,7 @@ int main(int argc, char **argv)
 	marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
 	ros::Subscriber sub = n.subscribe("simple_coordinates/chatter", 1000, chatterCallback); 
+	ros::Subscriber quaternionSub = n.subscribe("simple_coordinates/quaternionChatter", 1000, quaternionCallback);
 	ros::spin();
 	
 	return 0; 
